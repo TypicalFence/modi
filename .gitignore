@@ -1,0 +1,6 @@
+*.mod
+.vscode/
+build/
+modi.a
+modi-dump
+.DS_Store
