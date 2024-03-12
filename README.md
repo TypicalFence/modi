@@ -13,8 +13,7 @@ The project is very work in progress.
 
 - C99
   - stdint.h
-- 16bit architecture
-  - might port it to 8bit (probably not worth it tho)
+- 16bit architecture (theoretically)
 
 ## Building
 
@@ -27,7 +26,7 @@ make
 
 This will result in a static library called `modi.a`.
 
-To build any of the tools you need to specify then when running make.
+To build any of the tools you need to specify them when running make.
 
 ```
 make modi-dump

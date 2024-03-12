@@ -5,7 +5,7 @@
 # ------------------------------------------------
 
 # If no compiler is specified try figuring out what to use
-ifndef C
+ifndef CC
 	UNAME_S := $(shell uname -s)
 	ifeq ($(UNAME_S),Linux)
 		# default to gcc under Linux, users can still overwrite that

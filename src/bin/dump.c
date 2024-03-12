@@ -153,7 +153,7 @@ void dumpSample(struct AmigaModule* module, char* moduleFilePath, int8_t sampleN
     FILE *file;
 
     printf("Dumping Sample %d: %s\n", sampleNumber, module->samples[sampleNumber].sampleName);
-    sample = load_amiga_sample(module, sampleNumber, moduleFilePath);
+    sample = load_amiga_sample_from_disk(moduleFilePath, module, sampleNumber);
 
     snprintf(filename, 100, "sample-%d.wav", sampleNumber);
     convertSignedToUnsigned8bit(sample, unsignedPCM, sampleLength);
@@ -174,8 +174,6 @@ void dumpAllSamples(struct AmigaModule* module, char* moduleFilePath) {
     }
 }
 
-
-
 int main(int argc, char* argv[]) {
     handleArgs(argc, argv);
     struct AmigaModule* module; 
@@ -183,7 +181,7 @@ int main(int argc, char* argv[]) {
     module = malloc(sizeof(struct AmigaModule));
 
     // TODO handle status
-    uint8_t status = parse_amiga_module(moduleFilePath, module);
+    uint8_t status = parse_amiga_module_from_disk(moduleFilePath, module);
     printf("%s\n", module->magicChars);
     printf("Song: %s\n", module->songName);
 

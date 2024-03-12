@@ -31,89 +31,78 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "./datasource.h"
 
-void parse_note_bytes(uint8_t *noteBytes, struct AmigaNote *note) {
-    uint16_t frequency = (noteBytes[0] & 0x0f) << 8 | noteBytes[1];
+static inline void parse_note_bytes(uint8_t *noteBytes, struct AmigaNote *note) {
+    uint16_t period= (noteBytes[0] & 0x0f) << 8 | noteBytes[1];
     uint8_t sampleNumber = (noteBytes[0] & 0xf0) | (noteBytes[2] >> 4);
     enum AmigaEffect effect = (noteBytes[2] & 0xf0) >> 4;
     uint8_t effectParameter = noteBytes[3];
 
-    note->frequency = frequency;
+    note->period = period;
     note->sampleNumber = sampleNumber;
     note->effect = effect;
     note->effectParameter = effectParameter;
 }
 
-uint8_t parse_amiga_module(const char *filename, struct AmigaModule *module) {
-    FILE* file = fopen(filename, "rb");
-    if (file == NULL) {
-        printf("Unable to open file: %s\n", filename);
-        return 1;
-    }
-
-
-    fseek(file, 0, SEEK_SET);
-    fread(module->songName, 20, 1, file);
+uint8_t parse_amiga_module(struct DataSource* data, struct AmigaModule *module) {
+    modi_seek(data, 0, SEEK_SET);
+    modi_read(module->songName, 20, 1, data);
+    printf("Song name: %s\n", module->songName);
 
     // parse samples
     for (int i = 0; i < 31; i++) {
-        fread(module->samples[i].sampleName, 22, 1, file);
+        modi_read(module->samples[i].sampleName, 22, 1, data);
         u_int8_t lengthBytes[2];
-        fread(&lengthBytes, 1, 2, file);
+        modi_read(&lengthBytes, 1, 2, data);
         uint16_t rawSampleLength = (lengthBytes[0] << 8) | lengthBytes[1];
         uint16_t sampleLength = rawSampleLength * 2;
         module->samples[i].sampleLength = sampleLength;
-        fread(&module->samples[i].finetune, 1, 1, file);
-        fread(&module->samples[i].volume, 1, 1, file);
-        fread(&module->samples[i].repeatOffset, 2, 1, file);
-        fread(&module->samples[i].repeatLength, 2, 1, file);
+
+        modi_read(&module->samples[i].finetune, 1, 1, data);
+        modi_read(&module->samples[i].volume, 1, 1, data);
+        modi_read(&module->samples[i].repeatOffset, 2, 1, data);
+        modi_read(&module->samples[i].repeatLength, 2, 1, data);
     }
 
-    fread(&module->songLength, 1, 1, file);
+    modi_read(&module->songLength, 1, 1, data);
     int magicPatternCount = 0;
-    fread(&magicPatternCount, 1, 1, file);
-    printf("Magic pattern count: %d\n", magicPatternCount);
+    modi_read(&magicPatternCount, 1, 1, data);
 
     for (int i = 0; i < 128; i++) {
-        fread(&module->patternMap[i], 1, 1, file);
+        modi_read(&module->patternMap[i], 1, 1, data);
     }
 
-    fread(&module->magicChars, 4, 1, file);
+    modi_read(&module->magicChars, 4, 1, data);
 
     uint8_t highestPattern = 0;
     for (int i = 0; i < 128; i++) {
         if (module->patternMap[i] > highestPattern) {
-            highestPattern = module->patternMap[i];
+            highestPattern = module->patternMap[i] + 1;
         }
     }
 
-    for (int i = 0; i < highestPattern + 5; i++) {
+    for (int i = 0; i < highestPattern; i++) {
         for (int j = 0; j < 64; j++) {
             for (int k = 0; k < 4; k++) {
                 uint8_t noteBytes[4];
-                fread(&noteBytes, 4, 1, file);
+                modi_read(&noteBytes, 4, 1, data);
                 parse_note_bytes(noteBytes, &module->patterns[i].rows[j][k]);
             }
         }
     }
 
-    module->sampleOffset = ftell(file);
-
-    fclose(file);
+    int patternDataSize = (highestPattern + 1) * 1024;
+    module->sampleOffset = 1084 + patternDataSize;
 
     return 0;
 }
 
 
-int8_t* load_amiga_sample(struct AmigaModule *module, int instrumentIndex, const char *filename) {
+int8_t* load_amiga_sample(struct DataSource *ds, struct AmigaModule *module, int instrumentIndex) {
     struct AmigaSample sampleMetadata = module->samples[instrumentIndex];
-    FILE* file = fopen(filename, "rb");
-    if (file == NULL) {
-        printf("Unable to open file: %s\n", filename);
-        return NULL;
-    }
-
-    uint64_t previousSamplesOffset= 0;
+    
+    uint32_t previousSamplesOffset = 0;
 
     if (instrumentIndex > 0) {
         for (size_t i = 0; i < instrumentIndex; i++) {
@@ -121,12 +110,90 @@ int8_t* load_amiga_sample(struct AmigaModule *module, int instrumentIndex, const
         }
     }
 
-    
+    printf("Sample offset: %d\n", previousSamplesOffset);
 
-    fseek(file, module->sampleOffset + previousSamplesOffset - 4400 , SEEK_SET);
+    modi_seek(ds, module->sampleOffset + previousSamplesOffset, SEEK_SET);
     int8_t* sample = malloc(sampleMetadata.sampleLength * sizeof(int8_t));
-    fread(sample, sizeof(int8_t), sampleMetadata.sampleLength, file);
+    modi_read(sample, sizeof(int8_t), sampleMetadata.sampleLength, ds);
+
+    return sample;
+}
+
+uint8_t parse_amiga_module_from_disk(const char *filename, struct AmigaModule *module) {
+    FILE* file = fopen(filename, "rb");
+    if (file == NULL) {
+        printf("Unable to open file: %s\n", filename);
+        return 1;
+    }
+
+    struct DataSource ds = {
+        .data = {
+            .file = file
+        },
+        .read = modi_file_read,
+        .seek = modi_file_seek,
+    };
+
+    uint8_t status = parse_amiga_module(&ds, module);
+
+    fclose(file);
+
+    return status;
+}
+
+uint8_t parse_amiga_module_from_memory(const uint8_t* bytes, struct AmigaModule *module) {
+    struct Buffer buffer = {
+        .buffer = bytes,
+        .cursor = 0,
+        .length = sizeof(bytes),
+    };
+    struct DataSource ds = {
+        .data = {
+            .buffer = &buffer,
+        },
+        .read = modi_buffer_read,
+        .seek = modi_buffer_seek,
+    };
+
+    return parse_amiga_module(&ds, module);
+}
+
+int8_t* load_amiga_sample_from_disk(const char *filename, struct AmigaModule *module, int instrumentIndex) {
+    FILE* file = fopen(filename, "rb");
+    if (file == NULL) {
+        printf("Unable to open file: %s\n", filename);
+        return NULL;
+    }
+
+    struct DataSource ds = {
+        .data = {
+            .file = file
+        },
+        .read = modi_file_read,
+        .seek = modi_file_seek,
+    };
+
+    int8_t* sample = load_amiga_sample(&ds, module, instrumentIndex);
+
     fclose(file);
 
     return sample;
+}
+
+int8_t* load_amiga_sample_from_memory(const uint8_t* bytes, struct AmigaModule *module, int instrumentIndex) {
+    struct Buffer buffer = {
+        .buffer = bytes,
+        .cursor = 0,
+        .length = sizeof(bytes),
+    };
+
+    struct DataSource ds = {
+        .data = {
+            .buffer = &buffer ,
+        },
+        .read = modi_buffer_read,
+        .seek = modi_buffer_seek,
+    };
+
+    return load_amiga_sample(&ds, module, instrumentIndex);
 }

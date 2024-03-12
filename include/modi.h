@@ -31,6 +31,7 @@
 #define MODI_H 
 
 #include <stdint.h>
+#include <modi/chromaticNote.h>
 
 struct AmigaSample {
     char sampleName[22];
@@ -61,7 +62,7 @@ enum AmigaEffect {
 };
 
 struct AmigaNote {
-    u_int16_t frequency;
+    u_int16_t period;
     u_int8_t sampleNumber;
     enum AmigaEffect effect;
     u_int8_t effectParameter;
@@ -88,7 +89,12 @@ enum ParseError {
     UNKNOWN_ERROR = 1,
 };
 
-uint8_t parse_amiga_module(const char *filename, struct AmigaModule *module);
-int8_t* load_amiga_sample(struct AmigaModule *module, int instrumentIndex, const char *filename);
+uint8_t parse_amiga_module_from_disk(const char *filename, struct AmigaModule *module);
+uint8_t parse_amiga_module_from_memory(const uint8_t* bytes, struct AmigaModule *module);
+int8_t* load_amiga_sample_from_disk(const char *filename, struct AmigaModule *module, int instrumentIndex);
+int8_t* load_amiga_sample_from_memory(const uint8_t* bytes, struct AmigaModule *module, int instrumentIndex);
+
+enum ChromaticNote modi_period_to_note(u_int16_t period);
+uint8_t modi_period_to_octave(u_int16_t period);
 
 #endif
