@@ -27,30 +27,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include "./datasource.h"
+#include <tau/tau.h>
 
-size_t modi_read(void* ptr, size_t size, size_t nmemb, struct DataSource* datasource) {
-    return datasource->read(ptr, size, nmemb, &datasource->data);
-}
+TAU_MAIN() // sets up Tau (+ main function)
 
-int modi_seek(struct DataSource* datasource, long offset, int whence) {
-    return datasource->seek(&datasource->data, offset, whence);
-}
+#include "./disk-test.h"
+#include "./mem-test.h"
 
-size_t modi_file_read(void* ptr, size_t size, size_t nmemb, union RawData* raw_data) {
-    return fread(ptr, size, nmemb, raw_data->file);
-}
-
-int modi_file_seek(union RawData* raw_data, long offset, int whence) {
-    return fseek(raw_data->file, offset, whence);
-}
-
-#ifndef MODI_16_BIT_SUPPORT
-size_t modi_buffer_read(void* ptr, size_t size, size_t nmemb, union RawData* datasource) {
-    // TODO implement
-}
-
-int modi_buffer_seek(union RawData* datasource, long offset, int whence) {
-    // TODO implement
-}
-#endif

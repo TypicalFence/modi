@@ -13,7 +13,7 @@ The project is very work in progress.
 
 - C99
   - stdint.h
-- 16bit architecture (theoretically)
+- 16bit architecture (I am not bothering with 8bit)
 
 ## Building
 
@@ -26,6 +26,11 @@ make
 
 This will result in a static library called `modi.a`.
 
+When building the library there are a few feature flags controlled by defines:
+
+- MODI_FS_SUPPORT
+- MODI_16BIT_SUPPORT
+
 To build any of the tools you need to specify them when running make.
 
 ```
@@ -37,3 +42,7 @@ make modi-dump
 ### modi-dump
 
 A cli tool to extract samples from mod files.
+
+# TODO
+
+- Support from_memory functions on 16bit systems

@@ -45,7 +45,9 @@ struct Buffer {
 };
 
 union RawData {
+    #if defined(MODI_FS_SUPPORT)
     FILE* file;
+    #endif
     struct Buffer* buffer;
 };
 
@@ -56,10 +58,16 @@ struct DataSource {
 };
 
 // Functions for defining a data source
+
+#if defined(MODI_FS_SUPPORT)
 size_t modi_file_read(void* ptr, size_t size, size_t nmemb, union RawData* raw_data);
 int modi_file_seek(union RawData* raw_data, long offset, int whence);
-size_t modi_buffer_read(void* ptr, size_t size, size_t nmemb, union RawData* raw_data);
-int modi_buffer_seek(union RawData* raw_data, long offset, int whence);
+#endif
+
+#ifndef MODI_16_BIT_SUPPORT
+    size_t modi_buffer_read(void* ptr, size_t size, size_t nmemb, union RawData* raw_data);
+    int modi_buffer_seek(union RawData* raw_data, long offset, int whence);
+#endif 
 
 
 size_t modi_read(void* ptr, size_t size, size_t nmemb, struct DataSource* datasource);

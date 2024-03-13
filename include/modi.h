@@ -89,10 +89,15 @@ enum ParseError {
     UNKNOWN_ERROR = 1,
 };
 
+#if defined(MODI_FS_SUPPORT)
 uint8_t parse_amiga_module_from_disk(const char *filename, struct AmigaModule *module);
-uint8_t parse_amiga_module_from_memory(const uint8_t* bytes, struct AmigaModule *module);
 int8_t* load_amiga_sample_from_disk(const char *filename, struct AmigaModule *module, int instrumentIndex);
+#endif
+
+#if !defined(MODI_16BIT_SUPPORT)
+uint8_t parse_amiga_module_from_memory(const uint8_t* bytes, struct AmigaModule *module);
 int8_t* load_amiga_sample_from_memory(const uint8_t* bytes, struct AmigaModule *module, int instrumentIndex);
+#endif
 
 enum ChromaticNote modi_period_to_note(u_int16_t period);
 uint8_t modi_period_to_octave(u_int16_t period);

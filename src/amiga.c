@@ -98,10 +98,8 @@ uint8_t parse_amiga_module(struct DataSource* data, struct AmigaModule *module) 
     return 0;
 }
 
-
-int8_t* load_amiga_sample(struct DataSource *ds, struct AmigaModule *module, int instrumentIndex) {
-    struct AmigaSample sampleMetadata = module->samples[instrumentIndex];
-    
+inline static void seek_to_sample(struct DataSource *ds, struct AmigaModule *module, int instrumentIndex) {
+    #ifndef MODI_16_BIT_SUPPORT
     uint32_t previousSamplesOffset = 0;
 
     if (instrumentIndex > 0) {
@@ -110,9 +108,22 @@ int8_t* load_amiga_sample(struct DataSource *ds, struct AmigaModule *module, int
         }
     }
 
-    printf("Sample offset: %d\n", previousSamplesOffset);
-
     modi_seek(ds, module->sampleOffset + previousSamplesOffset, SEEK_SET);
+    #else
+    modi_seek(ds, module->sampleOffset, SEEK_SET);
+
+    if (instrumentIndex > 0) {
+        for (size_t i = 0; i < instrumentIndex; i++) {
+            modi_seek(ds, module->samples[i].sampleLength, SEEK_CUR);
+        }
+    }
+    #endif
+};
+
+int8_t* load_amiga_sample(struct DataSource *ds, struct AmigaModule *module, int instrumentIndex) {
+    struct AmigaSample sampleMetadata = module->samples[instrumentIndex];
+    seek_to_sample(ds, module, instrumentIndex);
+    
     int8_t* sample = malloc(sampleMetadata.sampleLength * sizeof(int8_t));
     modi_read(sample, sizeof(int8_t), sampleMetadata.sampleLength, ds);
 
