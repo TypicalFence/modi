@@ -38,6 +38,8 @@ int modi_seek(struct DataSource* datasource, long offset, int whence) {
     return datasource->seek(&datasource->data, offset, whence);
 }
 
+
+#if defined(MODI_FS_SUPPORT) 
 size_t modi_file_read(void* ptr, size_t size, size_t nmemb, union RawData* raw_data) {
     return fread(ptr, size, nmemb, raw_data->file);
 }
@@ -45,6 +47,7 @@ size_t modi_file_read(void* ptr, size_t size, size_t nmemb, union RawData* raw_d
 int modi_file_seek(union RawData* raw_data, long offset, int whence) {
     return fseek(raw_data->file, offset, whence);
 }
+#endif
 
 #ifndef MODI_16_BIT_SUPPORT
 size_t modi_buffer_read(void* ptr, size_t size, size_t nmemb, union RawData* raw_data) {

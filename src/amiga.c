@@ -129,6 +129,7 @@ int8_t* load_amiga_sample(struct DataSource *ds, struct AmigaModule *module, int
     return sample;
 }
 
+#if defined(MODI_FS_SUPPORT)
 uint8_t parse_amiga_module_from_disk(const char *filename, struct AmigaModule *module) {
     FILE* file = fopen(filename, "rb");
     if (file == NULL) {
@@ -150,6 +151,7 @@ uint8_t parse_amiga_module_from_disk(const char *filename, struct AmigaModule *m
 
     return status;
 }
+#endif
 
 uint8_t parse_amiga_module_from_memory(const uint8_t* bytes, size_t length, struct AmigaModule *module) {
     struct Buffer buffer = {
@@ -168,6 +170,7 @@ uint8_t parse_amiga_module_from_memory(const uint8_t* bytes, size_t length, stru
     return parse_amiga_module(&ds, module);
 }
 
+#if defined(MODI_FS_SUPPORT)
 int8_t* load_amiga_sample_from_disk(const char *filename, struct AmigaModule *module, int instrumentIndex) {
     FILE* file = fopen(filename, "rb");
     if (file == NULL) {
@@ -189,6 +192,7 @@ int8_t* load_amiga_sample_from_disk(const char *filename, struct AmigaModule *mo
 
     return sample;
 }
+#endif
 
 int8_t* load_amiga_sample_from_memory(const uint8_t* bytes, size_t length, struct AmigaModule *module, int instrumentIndex) {
     struct Buffer buffer = {
