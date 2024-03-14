@@ -31,6 +31,7 @@
 #define MODI_H 
 
 #include <stdint.h>
+#include <stddef.h>
 #include <modi/chromaticNote.h>
 
 struct AmigaSample {
@@ -95,8 +96,8 @@ int8_t* load_amiga_sample_from_disk(const char *filename, struct AmigaModule *mo
 #endif
 
 #if !defined(MODI_16BIT_SUPPORT)
-uint8_t parse_amiga_module_from_memory(const uint8_t* bytes, struct AmigaModule *module);
-int8_t* load_amiga_sample_from_memory(const uint8_t* bytes, struct AmigaModule *module, int instrumentIndex);
+uint8_t parse_amiga_module_from_memory(const uint8_t* bytes, size_t length, struct AmigaModule *module);
+int8_t* load_amiga_sample_from_memory(const uint8_t* bytes, size_t length, struct AmigaModule *module, int instrumentIndex);
 #endif
 
 enum ChromaticNote modi_period_to_note(u_int16_t period);

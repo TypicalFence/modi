@@ -28,6 +28,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #include "./datasource.h"
+#include <string.h>
 
 size_t modi_read(void* ptr, size_t size, size_t nmemb, struct DataSource* datasource) {
     return datasource->read(ptr, size, nmemb, &datasource->data);
@@ -46,11 +47,38 @@ int modi_file_seek(union RawData* raw_data, long offset, int whence) {
 }
 
 #ifndef MODI_16_BIT_SUPPORT
-size_t modi_buffer_read(void* ptr, size_t size, size_t nmemb, union RawData* datasource) {
-    // TODO implement
+size_t modi_buffer_read(void* ptr, size_t size, size_t nmemb, union RawData* raw_data) {
+        struct Buffer* buff = raw_data->buffer;
+
+        size_t bytes_read = 0;
+
+        for (size_t i = 0; i < nmemb; i++) {
+            if (buff->cursor + size > buff->length) {
+                size = buff->length - buff->cursor;
+            }
+
+            memcpy(ptr + (size * i), buff->buffer + buff->cursor, size);
+            buff->cursor += size;
+            bytes_read += size;
+        }
+
+        return bytes_read;
 }
 
-int modi_buffer_seek(union RawData* datasource, long offset, int whence) {
-    // TODO implement
+int modi_buffer_seek(union RawData* raw_data, long offset, int whence) {
+    struct Buffer* buf = raw_data->buffer;
+
+     switch (whence) {
+        case SEEK_SET: buf->cursor = offset; break;
+        case SEEK_CUR: buf->cursor += offset; break;
+        case SEEK_END: buf->cursor = buf->length + offset; break;
+        default: return -1; // Invalid 'whence'
+    }
+
+    if (buf->cursor > buf->length) {
+        buf->cursor = buf->length; 
+    }
+
+    return 0;
 }
 #endif

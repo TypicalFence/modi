@@ -13,7 +13,7 @@ The project is very work in progress.
 
 - C99
   - stdint.h
-- 16bit architecture (I am not bothering with 8bit)
+- 16bit architecture (theoretically) (I am not bothering with 8bit)
 
 ## Building
 

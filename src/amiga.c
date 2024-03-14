@@ -48,7 +48,6 @@ static inline void parse_note_bytes(uint8_t *noteBytes, struct AmigaNote *note) 
 uint8_t parse_amiga_module(struct DataSource* data, struct AmigaModule *module) {
     modi_seek(data, 0, SEEK_SET);
     modi_read(module->songName, 20, 1, data);
-    printf("Song name: %s\n", module->songName);
 
     // parse samples
     for (int i = 0; i < 31; i++) {
@@ -152,11 +151,11 @@ uint8_t parse_amiga_module_from_disk(const char *filename, struct AmigaModule *m
     return status;
 }
 
-uint8_t parse_amiga_module_from_memory(const uint8_t* bytes, struct AmigaModule *module) {
+uint8_t parse_amiga_module_from_memory(const uint8_t* bytes, size_t length, struct AmigaModule *module) {
     struct Buffer buffer = {
         .buffer = bytes,
         .cursor = 0,
-        .length = sizeof(bytes),
+        .length = length,
     };
     struct DataSource ds = {
         .data = {
@@ -191,7 +190,7 @@ int8_t* load_amiga_sample_from_disk(const char *filename, struct AmigaModule *mo
     return sample;
 }
 
-int8_t* load_amiga_sample_from_memory(const uint8_t* bytes, struct AmigaModule *module, int instrumentIndex) {
+int8_t* load_amiga_sample_from_memory(const uint8_t* bytes, size_t length, struct AmigaModule *module, int instrumentIndex) {
     struct Buffer buffer = {
         .buffer = bytes,
         .cursor = 0,
